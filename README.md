@@ -1,7 +1,5 @@
 # Rain Toolkit
-Front-end prototypes and examples for components of Rain Protocol.
-
-This repo is a constant WIP and shouldn't be relied on for production critical tasks.
+Sloshy is a stablecoin arbitrage product powered by Rain Protocol.
 
 ## Development setup
 
@@ -16,7 +14,7 @@ curl -L https://nixos.org/nix/install | sh
 Drop into a nix-shell.
 
 ```
-cd rain-toolkit-gui
+cd sloshy
 nix-shell
 ```
 

@@ -33,7 +33,7 @@
     };     
     
     let orderBookContract, oldRow;
-    let txStatus = TxStatus.None, errorMsg;
+    let txStatus = TxStatus.None, errorMsg, allowError;
     let sloshId = params.wild
     let temp, firstToken
     let ownerAddress, toggle = false
@@ -153,7 +153,6 @@
         firstToken = order.validInputs[0]  
 
         let vault = order.validInputs[0].vault
-        console.log(vault) 
         vault.deposits.map(e => {
             let obj = e 
             obj['type'] = 'Deposit' 
@@ -175,17 +174,11 @@
                 return -1;
             }
             return 0;
-        }); 
-
-        console.log("depositsAndWithdrawals : " , depositsAndWithdrawals) 
-
-
-        
+        });         
     }
 
     $: if ($getOrder.data != undefined && $signerAddress ) {  
         let order_ = $getOrder.data.order     
-        console.log("order_ : " ,order_ )
         let ratio = new FloatBigNum(order_.stateConfig.constants[1]) 
         let ONE = new FloatBigNum("1000000000000000000")   
         let HUNDRED = new FloatBigNum("100")   
@@ -217,7 +210,6 @@
                 "address","address","tuple(address,address,uint256,uint256,tuple(address,uint8,uint256)[],tuple(address,uint8,uint256)[],bytes)","uint256"] ,
                     byteData[0].data)   
 
-            console.log("data : " ,data)
             let IO = data[2][4].map(e => { 
                 let vaultId = e[2].toString() 
                 return{
@@ -300,7 +292,12 @@
             }
             oldRow = row;
             let tokenC = new ethers.Contract(token?.tokenVault?.token.id, erc20ABI, $signer)
-            allowance = await tokenC.allowance($signerAddress.toLowerCase(), orderBookContract.address);
+            try{
+                allowance = await tokenC.allowance($signerAddress.toLowerCase(), orderBookContract.address);
+            }catch(err){
+                allowError = true
+                errorMsg = err
+            }
             if(!toggle){                
                 tokenD = token
                 toggle = true
@@ -372,13 +369,13 @@
                             </div>
                             <div />
                             {#key toggle}
-                                <TokenTransaction toggleToken={toggleT} token={tokenD} orderBookContract={orderBookContract} />
+                                <TokenTransaction toggleToken={toggleT} token={tokenD} orderBookContract={orderBookContract} error= {errorMsg} />
                             {/key }
 
                         <div class="py-6">
                             <div class="w-full text-lg flex justify-center items-center text-black font-medium">Deposit/Withdrawal History</div>
                         </div>
-                        <table class="table-auto block w-full px-8 pb-2">
+                        <table class="table-auto block w-full px-5 pb-2">
                             <thead class="block items-center py-1 rounded-t-lg" style="background-color: #949494; ">
                                 <tr class="font-semibold flex w-full text-white">
                                     <th class="text-center w-1/4 text-sm">Type</th>

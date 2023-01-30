@@ -81,16 +81,13 @@
                 constants: askConstants,  
             }, 
             data : aliceAskOrder
-        }  
-
-        console.log("askOrderConfig : " , askOrderConfig )
+        } 
         
             let txAskOrderLive = await orderBookContract.addOrder(askOrderConfig );
             txHash = txAskOrderLive
             txStatus = TxStatus.AwaitingConfirmation;
             
             let receipt = await txAskOrderLive.wait()
-            console.log("receipt.events", receipt.events.filter(e => e.event == 'AddOrder'));
             
             sloshId = receipt.events.filter(e => e.event == 'AddOrder')[0].args[3].toHexString()
             
@@ -98,8 +95,6 @@
             txStatus = TxStatus.Complete;
             // push(`/sloshes`)
         }catch(error){  
-            console.log("error setup", error);
-            
             Sentry.captureException(error);
             if (error.code === Logger.errors.TRANSACTION_REPLACED) {
                 if (error.cancelled) {

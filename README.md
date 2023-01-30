@@ -14,7 +14,7 @@ curl -L https://nixos.org/nix/install | sh
 Drop into a nix-shell.
 
 ```
-cd rain-toolkit-gui
+cd sloshy
 nix-shell
 ```
 

@@ -1,7 +1,5 @@
-# Rain Toolkit
-Front-end prototypes and examples for components of Rain Protocol.
-
-This repo is a constant WIP and shouldn't be relied on for production critical tasks.
+# Sloshy
+Sloshy is a stablecoin arbitrage product powered by Rain Protocol.
 
 ## Development setup
 

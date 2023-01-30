@@ -1,6 +1,4 @@
 <script lang="ts">
-    import Button from "$components/Button.svelte";
-    import IconLibrary from "$components/IconLibrary.svelte";
     import Section from "$routes/order-book/Section.svelte";
     import { selectedNetwork } from "$src/stores";  
 
@@ -9,8 +7,6 @@
     import { provider , signer , signerAddress } from "svelte-ethers-store";
     import { BigNumber, ethers } from "ethers"; 
     import orderABI from "./orderbookABI.json" 
-    import DepositModal from "./DepositModal.svelte";
-    import WithdrawModal from "./WithdrawModal.svelte";
     import { getContext } from "svelte";
     import { hex_to_ascii } from "./opcodes";
     import {BigNumber as FloatBigNum} from 'bignumber.js'
@@ -20,7 +16,11 @@
     import { push } from "svelte-spa-router"; 
     import erc20ABI from "./erc20ABI.json" 
 
-
+    import TokenList from "./TokenList.svelte";
+    import TokenTransaction from "./tokenTransaction.svelte";
+    import Input from "$components/Input.svelte";
+    import { required } from "$src/validation";
+    import dayjs from "dayjs";
 
     enum TxStatus {
         None,
@@ -32,19 +32,20 @@
         wild: string;
     };     
     
-    let orderBookContract
-
-    $: if($signer){
-        orderBookContract = new ethers.Contract('0x1d4e06f86d0d07059a4fc76069c1d8660558947e',orderABI , $signer )   
-    }
-
+    let orderBookContract, oldRow;
     let txStatus = TxStatus.None, errorMsg;
     let sloshId = params.wild
-    let temp
-    let ownerAddress
-    let threshold
+    let temp, firstToken
+    let ownerAddress, toggle = false
+    let threshold, tokenD, isWithdrawable
+    let allowance, depositVal, withdrawVal 
+    let depositsAndWithdrawals = []
 
     let takeOrders_  = []
+
+    $: if($signer){
+        orderBookContract = new ethers.Contract('0x757cc6205f8f1d92879d1e119481f265938660bf',orderABI , $signer )   
+    }
 
     $: getOrder = queryStore({
         client: $client,
@@ -74,6 +75,27 @@
                                 symbol
                             } 
                             balance
+                        } 
+                        vault{
+                          deposits(orderBy: timestamp, orderDirection :desc){
+                            sender
+                            token {
+                              name 
+                              decimals
+                            }
+                            amount
+                            timestamp
+                          }  
+                          withdraws(orderBy: timestamp, orderDirection :desc){
+                            sender
+                            token{
+                              name 
+                              decimals
+                            }
+                            amount
+                            timestamp
+                          }
+                    
                         }
                     } 
                     validOutputs{
@@ -128,11 +150,42 @@
             token.userBal = await tokenContract.balanceOf($signerAddress?.toLowerCase())
             
         })
+        firstToken = order.validInputs[0]  
+
+        let vault = order.validInputs[0].vault
+        console.log(vault) 
+        vault.deposits.map(e => {
+            let obj = e 
+            obj['type'] = 'Deposit' 
+            depositsAndWithdrawals.push(obj)
+            return e
+        }) 
+        vault.withdraws.map(e => {
+            let obj = e 
+            obj['type'] = 'Withdrawal'
+            depositsAndWithdrawals.push(obj)
+            return e
+        })
+        
+        depositsAndWithdrawals = depositsAndWithdrawals.sort((a, b) => {
+            if (a.timestamp < b.timestamp) {
+                return 1;
+            }
+            if (a.timestamp > b.timestamp) {
+                return -1;
+            }
+            return 0;
+        }); 
+
+        console.log("depositsAndWithdrawals : " , depositsAndWithdrawals) 
+
+
+        
     }
 
     $: if ($getOrder.data != undefined && $signerAddress ) {  
         let order_ = $getOrder.data.order     
-
+        console.log("order_ : " ,order_ )
         let ratio = new FloatBigNum(order_.stateConfig.constants[1]) 
         let ONE = new FloatBigNum("1000000000000000000")   
         let HUNDRED = new FloatBigNum("100")   
@@ -150,21 +203,22 @@
      }
 
     $: if($signer) {
-            ownerAddress = $signerAddress?.toLowerCase()
-        }
+        ownerAddress = $signerAddress?.toLowerCase()
+    }
 
     const handleClick = async () =>{  
         try {
             let order_ = $getOrder.data.order 
 
             let tx  = await $provider.getTransactionReceipt(order_.transactionHash)  
-            let byteData = tx.logs.filter(e => {return e.topics[0] == '0x7e4a3d1b8b320d979824450641b0d97507684bf55eafb4503032f4042f8fbf8d' })  
+            let byteData = tx.logs.filter(e => {return e.topics[0] == '0xf2d122ec0221a265ba577c8d1cbc391d998c133e1214815df3c68e66d8ee3858' })  
 
             let data = await ethers.utils.defaultAbiCoder.decode([
-                "address","tuple(address,address,uint256,uint256,tuple(address,uint8,uint256)[],tuple(address,uint8,uint256)[],bytes)","uint256"] ,
+                "address","address","tuple(address,address,uint256,uint256,tuple(address,uint8,uint256)[],tuple(address,uint8,uint256)[],bytes)","uint256"] ,
                     byteData[0].data)   
 
-            let IO = data[1][4].map(e => { 
+            console.log("data : " ,data)
+            let IO = data[2][4].map(e => { 
                 let vaultId = e[2].toString() 
                 return{
                     token : e[0] ,
@@ -192,23 +246,23 @@
             push(`/sloshes`)
             
         } catch (error) {   
-            
+            console.log("error : " , error)
              Sentry.captureException(error);
             if (error.code === Logger.errors.TRANSACTION_REPLACED) {
                 if (error.cancelled) {
                     errorMsg = "Transaction Cancelled";
-                    txStatus = TxStatus.Error;
+                    // txStatus = TxStatus.Error;
                     return;
                 } else {
                     await error.replacement.wait();
                 }
             } else if(error.code === -32603){
                 errorMsg = 'Transaction Underpriced , please try again'
-                txStatus = TxStatus.Error;
+                // txStatus = TxStatus.Error;
                 return;
             }else if(error.code == Logger.errors.ACTION_REJECTED){
                 errorMsg = 'Transaction Rejected'
-                txStatus = TxStatus.Error;
+                // txStatus = TxStatus.Error;
                 return;
             }else { 
                 errorMsg = error.error?.data?.message  ||
@@ -216,19 +270,48 @@
                 error.data?.message ||
                 error?.message || 
                 error?.code 
-                txStatus = TxStatus.Error;
+                // txStatus = TxStatus.Error;
                 return;
             }
         }      
     }
     
-    const refresh = async () => {
-        temp = sloshId;
-        sloshId = undefined;
-        if (await !$getOrder.fetching) {
-            sloshId = temp;
+    // const refresh = async () => {
+    //     temp = sloshId;
+    //     sloshId = undefined;
+    //     if (await !$getOrder.fetching) {
+    //         sloshId = temp;
+    //     }
+    // };
+
+    const handleRowClick = async (i, token) =>{
+            
+        let row = document.getElementById(token?.tokenVault?.token?.id)
+        if(oldRow){
+            oldRow.getElementsByTagName('td')[0].style.textDecorationLine = "underline"
         }
-    };
+        if(row){
+            row.style.backgroundColor = "#ECECEC"
+            row.style.borderRadius = "0 30px 30px 0"
+            row.getElementsByTagName('td')[0].style.textDecorationLine = "none"
+            if(oldRow && oldRow != row){
+                oldRow.style.backgroundColor = "white"
+                oldRow.style.borderRadius = "0 0 0 0"
+            }
+            oldRow = row;
+            let tokenC = new ethers.Contract(token?.tokenVault?.token.id, erc20ABI, $signer)
+            allowance = await tokenC.allowance($signerAddress.toLowerCase(), orderBookContract.address);
+            if(!toggle){                
+                tokenD = token
+                toggle = true
+            }
+        }
+    }
+    $: toggleT = toggle
+    
+    const onload = () =>{
+        handleRowClick(0, firstToken)
+    }
 
 </script> 
 
@@ -244,120 +327,104 @@
                         to get vault Ids
                     </div>
                 {:else}
-                    <div class="flex flex-col gap-y-2 px-4 pt-2 ">
-                        <div class="grid grid-cols-3 grid-flow-col justify-between">
-                            <span class="cursor-pointer pl-8 text-black" on:click={() =>{history.back()}} ><IconLibrary icon="back" width={14} /></span>
-                            <div class="flex flex-col justify-center items-center pb-2">
-                                <span class="font-semibold text-black ">Slosh {#if !order.orderLive} <span class="text-red-500">(deactivated)</span> {/if}</span>
-                                <span class="font-normal text-gray-700 ">{hex_to_ascii(order.data).isValid ? hex_to_ascii(order.data).asciiString ? hex_to_ascii(order.data).asciiString + " - " + sloshId.substring(0,20) + "..." : sloshId.substring(0,20) + "..." : ""}</span>
-                            </div>
-                            <div>
-                                <span  class="flex justify-end items-center pr-8 cursor-pointer" class:animate-spin={$getOrder.fetching} on:click={refresh}>
-                                    <IconLibrary color="text-black" icon="reload" /></span>
+                    <div class="flex flex-col gap-y-2 pt-2" style="min-width: 54rem;">
+                        <div class="px-6">
+                            <div class="grid grid-cols-3 grid-flow-col justify-between px-6">
+                                <!-- <span class="cursor-pointer pl-8 text-black" on:click={() =>{history.back()}} ><IconLibrary icon="back" width={14} /> -->
+                                <span class="text-black font-normal">Vault: <a class="items-center text-gray-700 underline hover:text-blue-500" target="_blank"
+                                    href={`${$selectedNetwork.blockExplorer}/tx/${sloshId}`}>{sloshId.substring(0,15)}...</a>
+                                </span>
+                                <div class="flex flex-col justify-center items-center pb-2">
+                                    <span class="font-semibold text-black ">{hex_to_ascii(order.data).isValid && hex_to_ascii(order.data).asciiString ? hex_to_ascii(order.data).asciiString + "-" : ''}Slosh Balances</span>
+                                    <span class="font-normal text-gray-700 ">{"(" + sloshId.substring(0,15) + '.....' + sloshId.substring(sloshId.length - 5, sloshId.length) + ")"}</span>
+                                </div>
+                                <div class="flex justify-end">
+                                        <button class="my-2 rounded-full text-base px-5 py-2 font-medium text-black" style="background-color: #FDA742;  box-shadow: inset 0px 2px 6px 0px #ffffff;"
+                                        on:click={()=>{push(`/slosh-history/${order.id}`)}}>Slosh History</button>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <table class="table-auto block w-full px-8 pb-2">
-                                <tr class="font-semibold w-full">
-                                    <th class="text-left pb-2 w-52 text-black">Token</th>
-                                    <th class="text-left pb-2 w-52 text-black">Vault Balances</th>
-                                    <th class="w-52"/>
+                        <div class="w-1/2">
+                                <table class="table-auto block w-full pb-2" id="tb">
+                                    <thead class=" w-full inline-block">
+                                    <tr class="font-semibold w-full flex pb-2 items-center pl-28">
+                                        <th class="text-left  w-4/6 text-black">Token</th>
+                                        <th class="text-left  w-2/6 text-black">Balances</th>
+                                    </tr>  
+                                    </thead>
+                                    <tbody class=" w-full inline-block">
+                                        {#each order.validInputs as token, i}
+                                            <!-- <div class="hidden">{i == 0 ? handleRowClick(i, token) : ''}</div> -->
+                                            <tr class="flex w-full items-center pl-28 p-1 cursor-pointer currRow" id={token?.tokenVault?.token?.id}
+                                            on:click={() => {
+                                                    toggle = false
+                                                    handleRowClick(i, token)
+                                                }}
+                                            use:onload
+                                           >
+                                                <td class="w-4/6 text-gray-700 underline font-normal" id="firstTd{i}">{token?.tokenVault?.token?.name}</td>
+                                                <td class="w-2/6 text-gray-700">
+                                                    {ethers.utils.formatUnits(token?.tokenVault?.balance , token?.tokenVault?.token?.decimals)}
+                                                </td>
+                                            </tr>
+                                        {/each}
+                                </table>
+                            </div>
+                            <div />
+                            {#key toggle}
+                                <TokenTransaction toggleToken={toggleT} token={tokenD} orderBookContract={orderBookContract} />
+                            {/key }
+
+                        <div class="py-6">
+                            <div class="w-full text-lg flex justify-center items-center text-black font-medium">Deposit/Withdrawal History</div>
+                        </div>
+                        <table class="table-auto block w-full px-8 pb-2">
+                            <thead class="block items-center py-1 rounded-t-lg" style="background-color: #949494; ">
+                                <tr class="font-semibold flex w-full text-white">
+                                    <th class="text-center w-1/4 text-sm">Type</th>
+                                    <th class="text-center w-1/4 text-sm">Token</th>
+                                    <th class="text-center w-1/4 text-sm">Amount</th>
+                                    <th class="text-center w-1/4 text-sm">Date</th>
                                 </tr>  
-                                <tbody class=" w-full inline-block">
-                                    {#each order.validInputs as token}
-                                        <tr class="gap-x-4 flex w-full items-center">
-                                            <td class="pr-6 w-1/4 text-gray-700">{token?.tokenVault?.token?.name}</td>
-                                            <td class="pr-6 flex justify-center text-gray-700" style="width: 38%;">
-                                                {ethers.utils.formatUnits(token?.tokenVault?.balance , token?.tokenVault?.token?.decimals)}
-                                            </td>
-                                            <td class="py-1" style="width: 37%;">
-                                                <div class="flex justify-between">
-                                                    <div>
-                                                        {#if ethers.utils.formatUnits(token?.tokenVault?.balance , token?.tokenVault?.token?.decimals) != '0.0'}
-                                                            <button class="transition-colors text-sm leading-none py-1 px-5 rounded-full text-black" style="background-color: #FDB142;" on:click={() => {
-                                                                open(WithdrawModal, {token, orderBookContract})
-                                                                // withdraw(vault_.token.id)
-                                                            }}>Withdraw</button>
-                                                        {/if}
-                                                    </div>
-                                                    <div>
-                                                        <button class="transition-colors text-sm leading-none py-1 px-5 rounded-full text-black bgColor" 
-                                                            on:click={async () => {
-                                                                let tokenContract = new ethers.Contract(token.tokenVault.token.id, erc20ABI, $signer)
-                                                                let bal = await tokenContract.balanceOf($signerAddress?.toLowerCase())
-                                                                
-                                                                if(bal.gt(BigNumber.from('0')))
-                                                                    
-                                                                    open(DepositModal, {token, orderBookContract})}}
-                                                            disabled = {!order.orderLive} 
-                                                            
-                                                        >Deposit</button>    
-                                                        <!-- || !ethers.BigNumber.from(token?.userBal.toString()).gte -->
-                                                    </div>
-                                                        <!-- // deposit(vault_.token.id) -->
-                                                </div>
-                                            </td>
+                            </thead>
+                            <tbody class="block items-center py-1 history text-black">
+                                {#if depositsAndWithdrawals.length == 0}
+                                <tr class="font-normal flex py-1 w-full justify-center">
+                                    Deposit some tokens to see the Deposit/ Withdrawal History show here
+                                </tr>
+                                {:else}
+                                    {#each depositsAndWithdrawals as tx}
+                                        <tr class="font-normal flex py-1 w-full">
+                                            <td class="text-center w-1/4 text-sm">{tx.type}</td>
+                                            <td class="text-center w-1/4 text-sm">{tx.token.name}</td>
+                                            <td class="text-center w-1/4 text-sm">{ethers.utils.formatUnits(tx?.amount , tx.token?.decimals)}</td>
+                                            <td class="text-center w-1/4 text-sm">{dayjs.unix(tx.timestamp).toISOString().slice(0,10)}</td>
                                         </tr>
                                     {/each}
-                            </table>
-                            <div class="pl-8 text-black">Vault: <a class="items-center text-gray-700 underline hover:text-blue-500" target="_blank"
-                                href={`${$selectedNetwork.blockExplorer}/tx/${sloshId}`}>{sloshId.substring(0,15)}...</a></div>
-                        </div>
-                        <div class="bg-gray-200 p-2 gap-x-4 px-6 my-4">
-                            <div class="w-full text-sm flex justify-center items-center text-black font-medium">Threshold : {threshold} %</div>
-                        </div>
+                                {/if}
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="grid grid-cols-3 px-14 gap-x-6">
-                        <div class="flex flex-col gap-y-2"> 
-                            <span class="font-semibold text-black">History</span>
-                            <ul class="list-none"> 
-                                {#each takeOrders_ as takeOrder_}
-                                    <li class="leading-7 text-gray-700">{takeOrder_.id.substring(0,12)}...</li>
-                                {/each}
-                                
-                            </ul>
-                        </div>
-                        <div class="flex flex-col gap-y-2">
-                            <span class="font-semibold text-black">What was sold</span>
-                            <ul class="list-none"> 
-                                {#each takeOrders_ as takeOrder_}
-                                <!-- <li class="leading-7">{takeOrder_.outputToken.id}  {takeOrder_.output}</li>  -->
-                                <li class="leading-7 text-gray-700"><a href="https://mumbai.polygonscan.com/address/{takeOrder_.outputToken.id}">{takeOrder_.outputToken.id.substring(0,5)}...</a>  {takeOrder_.output}</li>
-
-                                {/each}
-                                
-                            </ul>
-                        </div>
-                        <div class="flex flex-col gap-y-2">
-                            <span class="font-semibold text-black">What was bought</span>
-                            <ul class="list-none">
-                                {#each takeOrders_ as takeOrder_}
-                                <li class="leading-7 text-gray-700"><a href="https://mumbai.polygonscan.com/address/{takeOrder_.inputToken.id}">{takeOrder_.inputToken.id.substring(0,5)}...</a>  {takeOrder_.input}</li>
-                                {/each}
-                            </ul>
-                        </div>
-                
-                    </div>
-                    <span class="grid justify-start px-6 pt-8">
+                    
+                    <span class="grid justify-start px-6 pt-6">
                         {#if order.orderLive}
-                        <button class="w-full transition-colors underline text-base leading-none py-2 px-5 text-red-500" on:click={handleClick}>Deactivate Slosh</button>
+                        <button class="w-full transition-colors underline text-base leading-none py-2 px-5 text-red-500 font-normal" on:click={handleClick}>Deactivate Slosh</button>
                         {/if}
                     </span>
                 {/if}
             {/if}
-
             {#if txStatus == TxStatus.AwaitingConfirmation}
                 <div class="flex flex-col items-center gap-y-5 p-6">
                     <lottie-player src="https://lottie.host/5f90529b-22d1-4337-8c44-46e3ba7c0c68/pgMhlFIAcQ.json" background="transparent" speed="1" style="width: 300px; height: 200px;" loop autoplay></lottie-player>
-                    <span class="text-lg text-black">Transaction confirming...</span>
+                    <span class="text-lg text-black">Deactivating Slosh...</span>
                 </div>
             {/if}
-            {#if txStatus == TxStatus.Error}
+            <!-- {#if txStatus == TxStatus.Error}
                 <div class="flex flex-col items-center gap-y-5 p-6">
                     <span class="text-lg text-black">Something went wrong.</span>
                     <span class="text-lg text-red-400">{errorMsg}</span>
                 </div>
-            {/if}
+            {/if} -->
         </div>
     </Section>   
 </div>  
@@ -368,13 +435,16 @@
         width: 2px;
     }
     .bgColor{
-        background-color: #FDB142;
+        background-color: #FDA742;
     }
     button:disabled{
         background-color: #D2D2D2;
     }  
-
-  
-
-    
+    .history tr:nth-child(even) {
+        background-color: #F0EFF1;
+    }
+    tbody:first-child{
+        background-color: #ECECEC;
+        /* border-radius: 0 0 50% 50%; */
+    }
 </style>

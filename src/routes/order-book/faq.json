@@ -1,0 +1,63 @@
+[
+    {
+        "question": "How does this work essentially?",
+        "answer": "The whole system is designed to buy the worst token at any moment. You’re buying tokens (that are all supposed to be the same price as each other) at a temporary dip, so you’ll always be increasing your balance. The threshold is the % difference between what your token is worth and what you want to ‘Slosh’ down to buy the other token at."
+    },
+    {
+        "question": "What is the Threshold?",
+        "answer": "The threshold is a percentage. Any time the price difference between a token you have and another token enabled in your Slosh is more than the threshold, you will automatically sell the token (Slosh) you hold to buy the cheaper token.\nFor example, if 1 DAI is worth 1.005 USDT (+0.5%) on some Decentralised Exchange (DEX), you hold DAI in your Slosh balance, and your threshold is 0.1% then Sloshy will attempt to sell all of your DAI for USDT. If you had 10000 DAI you would buy 10010 USDT in this case.\n\nIt is up to you to decide the right combination of tokens and threshold that matches your risk appetite and maximises profitability over time (many small profits vs. fewer larger profits).",
+        "note": "your threshold is also the exact price you will get in the case of a trade, the difference between your threshold and the DEX price goes to whoever processes your trade for you."
+    },
+    {
+        "question": "Does sloshy guarantee that my orders will go through?",
+        "answer": "No. Sloshy places orders on-chain that can be matched against any on-chain DEX but this is a fully decentralised process. Some external market has to move past your Slosh so that there is a profit for whoever processes your order too, otherwise there's no reason for anyone to process your trade.\nFor example, if your threshold is 0.1% and some DEX is offering a 0.2% price difference then you will get 0.1% and whoever processes your trade will get 0.1%.\nEssentially, as the price difference on the DEX increases the profit opportunity and incentive for someone to process your trade increases. The gas for the trade has to be covered too in order for someone to sustainably process trades, but you will always get the price that matches your threshold when a trade happens and you never have to pay this gas yourself.\nBecause the profit for whoever processes the trade is a percentage, larger Slosh trades are more profitable to process and so have higher priority, smaller balances need a larger % price difference to cover gas costs and break even for a processor."
+    },
+    {
+        "question": "When does it Slosh?",
+        "answer": "Sloshy is completely decentralised so it isn't possible to predict exactly when a trade will complete. In short, when a token starts to 'depeg' (goes down) relative to what you hold, and moves past your threshold, there will be an incentive for someone to process your trade for you; that incentive increases as the price difference increases.\nIt is possible that the price difference between two tokens in your Slosh moves to your threshold or slightly past it and nobody processes the trade before the price recovers, especially if the profit for the processor is similar to the gas cost of the trade.\nIn general a smaller threshold, and more enabled tokens, gives more opportunities for a slosh trade to be prioritised and processed but the profit will be smaller (equal to the threshold) for each trade. It is up to you to decide the right combination of tokens and threshold that matches your risk appetite and maximises profitability over time (many small profits vs. fewer larger profits)."
+    },
+    {
+        "question": "How do I calculate profits?",
+        "answer": "This question has several answers. The elephant in the room is what happens when some token completely depegs and goes to zero permanently. Consider the Luna UST collapse as a high profile example. It doesn't matter how much UST you have before the crash because it is all worth $0 after the crash.\nThe basic risk/reward for Sloshy is that IF you pick tokens that maintain their price against each other while you are Sloshing THEN you will make a profit equal to your threshold every time there is a minor price fluctuation. The profits are only 'locked in' after the price recovers which means you have to withdraw the tokens from Sloshy so that they don't simply sell into another weak token as soon as they recover. Only after you fully withdraw your Sloshed tokens and their price recovers can you 'count your chickens' as they say and spend your profits.\nMaximising profits is a matter of picking as many tokens as possible with a good threshold to maximise both the number of trades overall and profit made for each trade. As explained above, selecting even just one token that permanently depegs is a total wipeout situation, so simply enabling every available token and setting a tiny threshold is asking for trouble.\nSloshy is a high conviction, high risk numbers game. You have to be very confident in the tokens that you enable, even through catastrophic market events, that they will quickly recover from any temporary price fluctuations."
+    },
+    {
+        "question": "How do I trust the smart contracts?",
+        "answer": "To use Sloshy you need to be confident in both the tokens themselves and the contract that moves them on-chain.\nWe can't comment on the token contracts, but Sloshy is just a website that uses the Rain protocol smart contracts to A. define when a Slosh can happen B. allow someone to trigger the Slosh in a decentralised way if the conditions are met and C. let you deposit and withdraw tokens.\nRain protocol has no admin keys so it cannot be modified. This is a double edged sword, it means there are no developers who can get hacked or maliciously change the code on-chain to steal your tokens. It also means that if there is a bug or vulnerability in the underlying contracts, nobody can fix it for you.\nOver time, as more people use the Rain protocol contracts and they are _observed_ to work as intended, without bugs or hacks, everyone can _gradually_ increase their confidence that the contracts _actually do_ work as intended.\nIt is not smart to, and the developers of Sloshy do NOT want you to, dump money into Sloshy that you cannot afford to lose. And we don't mean that in an 'arse covering' kind of way, there's a very real risk that you get completely wiped out in the event of a smart contract bug/vulnerability, whether it is in the Rain protocol or some token depegging, and NOBODY can help you.\nThe good news is that IF Sloshy works as intended now, it will work as intended forever up to the limits of blockchain technology. NOBODY can change the code on-chain, and the entire website is hosted on IPFS. There are NO backend servers cobbling this all together in some kind of web2 way, the whole thing is on-chain and decentralised end to end."
+    },
+    {
+        "question": "How do I trust the Sloshy website?",
+        "answer": "This is a good question and a more complex problem than the smart contracts themselves. There's a lot that can go wrong when your web browser loads and displays a webpage. A short list of some example bad things that can happen:",
+        "list": [
+            {
+                "data": "- Someone can spend $10 forging a passport from a dodgy online service and use it to steal a domain to host a malicious version of the website"
+            },
+            {
+                "data": "- An honest but buggy version of the website could be uploaded that uses the wrong smart contracts, or uses the right smart contracts in the wrong way, etc."
+            },
+            {
+                "data": "- Someone could hack your computer and cause your web browser to display the wrong thing to you"
+            }
+        ],
+        "remainAnswer": "You can say things like 'ENS fixes this' or whatever, but ultimately if you're even semi-technical and dealing with large amounts of money (whatever that means to you) you might want to learn how to download and run the website locally from your own computer, and generally which contract addresses are the right ones to be signing transactions for, etc.\nEverything Sloshy is open source and decentralised so that is entirely possible, if you join the Telegram channel there are probably people who can help (and probably people who will try to scam you).\nOne thing to note about trusting the Sloshy website is that _we use Sentry.io for bug reporting_. The bug reports only contain the errors that might appear in the browser, that might even be invisible to you but happen in the background, so that they can be tracked and fixed. The bug reports DO NOT contain any personal information but DO contain your IP address, so you MIGHT WANT TO USE A VPN if that's a problem for you. The IP address thing is just something Sentry.io does and we have no control over it, if you know a decent error tracking system that doesn't do this please let us know so we can use it instead."
+    },
+    {
+        "question": "Is Sloshy an exchange?",
+        "answer": "\rNot really, it's generally not possible for two users of Sloshy to trade between each other. This is because everyone on Sloshy is chasing roughly the same tokens at the same time and the only way for sloshes to execute is for someone to bring in tokens from an existing external DEX unrelated to Sloshy.\nFor example, consider that Alice and Bob both have deposited 100 USDC each and enabled USDT with some positive threshold. They both want to buy USDT in that moment and both want to sell USDC. There's no way they can trade against each other if they both have USDC and both want USDT at the same time. The only way that Alice and Bob can end up with more than 200 USDT between them is if some some external existing DEX has the USDT/USDC liquidity to both sell their USDC and buy enough USDT to cover their thresholds.\nThe way this works under the hood is that Sloshy uses a smart contract that allows the tokens deposited by Alice and Bob to be 'flash loaned' to the account that is processing the Slosh, which can then go and place an external trade, then bring back the resulting tokens expected by Alice and Bob.\nSloshy is a kind of 'one sided order book' where everyone is always taking the same side of every trade according to their thresholds, but in the same direction. It relies on the existence of true double sided marketplaces to actually process anything.",
+        "listHead": "Specifically the steps are:",
+        "list": [
+            {
+                "data": "- Sloshy encodes the allowed tokens and thresholds into Rain Protocol"
+            },
+            {
+                "data": "- Rain Protocol lends the deposited tokens to someone for the purpose of processing a trade"
+            },
+            {
+                "data": "- That 'someone' (probably a bot...) uses the borrowed tokens to place the trade on an external marketplace (or come up with the required return tokens in any other way)"
+            },
+            {
+                "data": "- Rain protocol enforces the return of funds and that Sloshy thresholds are met"
+            }
+        ],
+        "remainAnswer": "It sounds complicated, but it's based on the ERC3156 flash loan standard which is relatively well understood and used in production at large scale."
+    }
+]

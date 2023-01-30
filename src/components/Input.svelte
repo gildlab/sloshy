@@ -27,6 +27,11 @@
   export let disabled = false;
   export let errorMsg = "";
   export let bgColor = "bg-gray-200";
+  export let wid = '';
+  export let padLeft = "";
+  export let alignAll = "";
+  export let lblTxtClr = "text-gray-500";
+
 
   let error: string;
   let timer, validating;
@@ -85,9 +90,9 @@
   };
 </script>
 
-<div use:autoAnimate class="flex w-full flex-col gap-y-2">
+<div use:autoAnimate class="flex w-full flex-col gap-y-2 {alignAll}">
   {#if $$slots.label}
-    <div class=" text-gray-500 text-sm font-medium">
+    <div class="{lblTxtClr}  text-sm font-medium">
       <slot name="label" />
     </div>
   {/if}
@@ -96,7 +101,7 @@
       <slot name="description" />
     </span>
   {/if}
-  <div class="flex flex-row items-center justify-end gap-x-2 self-stretch">
+  <div class="flex flex-row items-center justify-end gap-x-2 self-stretch {wid}">
     {#if type == "number"}
       <input
         type={_type}
@@ -110,7 +115,7 @@
         {disabled}
         {min}
         {max}
-        class="w-9/12 rounded-md {bgColor} p-1 font-light text-black {borderColor}"
+        class="w-10/12 rounded-md {bgColor} p-1 font-light text-black {borderColor}"
       />
     {:else}
       <input
@@ -125,7 +130,7 @@
         {disabled}
         {min}
         {max}
-        class="w-full rounded-md {bgColor} p-1 font-light text-black {borderColor}"
+        class="w-full rounded-md {bgColor} p-1 {padLeft} font-light text-black {borderColor} {type == "text" ? 'depth' : ''}"
       />
     {/if}
     {#if validating}
@@ -170,3 +175,12 @@
     <span class="text-red-500">{errorMsg}</span>
   {/if}
 </div>
+
+
+<style>
+  .depth{
+    /* -moz-box-shadow: inset -1px -1px 2px #CCC;
+    -webkit-box-shadow: inset -1px -1px 2px #CCC; */
+    box-shadow: 2px 1px 150px rgb(176, 176, 176, 0.5), inset 1px 3px 5px rgb(176, 176, 176, 0.5)
+  }
+</style>

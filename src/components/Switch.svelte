@@ -12,7 +12,7 @@
   .switch {
     position: relative;
     display: inline-block;
-    width: 45px;
+    width: 50px;
     height: 24px;
   }
 
@@ -57,8 +57,8 @@
   }
 
   input:checked + .slider:before {
-    -webkit-transform: translateX(21px);
-    -ms-transform: translateX(21px);
-    transform: translateX(21px);
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
   }
 </style>

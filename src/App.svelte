@@ -6,7 +6,7 @@
   import Router from "svelte-spa-router";
   import Modal from "svelte-simple-modal";
     
-  import AddSlosh from "$routes/order-book/AddSlosh.svelte";
+  import AddSlosh from "$routes/order-book/SloshSetup.svelte";
   import SloshBalance from "$routes/order-book/SloshBalance.svelte";
   import Sloshes from "$routes/order-book/Sloshes.svelte";
   import Orderbook from "$routes/order-book/Orderbook.svelte";
@@ -18,6 +18,7 @@
   import { selectedNetwork } from "$src/stores";
   import NotFound from "$routes/order-book/NotFound.svelte";
     import Privacy from "$routes/order-book/Privacy.svelte";
+    import SloshHistory from "$routes/order-book/SloshHistory.svelte";
    
   let routes = {};
 
@@ -26,7 +27,8 @@
     "/": Orderbook,
     "/sloshes" : Sloshes,
     "/addslosh": AddSlosh,
-    "/slosh/*": SloshBalance,
+    "/slosh/*": SloshBalance, 
+    "/slosh-history/*": SloshHistory, 
     "/slosh-comic": SloshComic,
     "/privacy" : Privacy,
     
@@ -106,10 +108,12 @@
 >
   <Header />
     <main class="relative flex flex-col font-light text-gray-50 image">
-      <div class="w-full py-5 px-8 height flex flex-col justify-center items-center">
-        {#if $signerAddress}
+      {#if $signerAddress}
+        <div class="w-full py-5 px-8 height flex flex-col  items-center">
           <Router {routes} />
+        </div>
         {:else}
+        <div class="w-full py-5 px-8 height flex flex-col justify-center items-center">
           <div class="flex flex-col justify-center items-center h-full">
             <span class="text-xl font-semibold text-black">To use the app:</span>
             <div class="mt-4">
@@ -120,8 +124,8 @@
               >
             </div>
           </div>
+        </div>
         {/if}
-      </div>
       <Footer />
     </main>
 </Modal>
@@ -140,5 +144,6 @@
   }
   .height{
     min-height: 74vh;
+    /* min-height: 104vh; */
   }
 </style>

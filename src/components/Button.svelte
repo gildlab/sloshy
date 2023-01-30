@@ -70,6 +70,6 @@
     @apply cursor-not-allowed bg-gray-400;
   }
   .shadow{
-    box-shadow: inset 0 0 5px 5px #FDB142;
+    box-shadow: inset 0 0 5px 5px #FDA742;
   }
 </style>

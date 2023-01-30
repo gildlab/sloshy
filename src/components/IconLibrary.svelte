@@ -22,7 +22,8 @@
     | "tip"
     | "share"
     | "down-open-arrow"
-    | 'up-arrow';
+    | 'up-arrow'
+    | 'search';
   export let inline = true;
 
   $: if (!height) {
@@ -33,15 +34,15 @@
 </script>
 
 {#if icon == "link"}
-  <svg
+<svg
     class:inline
-    class="fill-current {color}"
+    fill= 'none'
     {width}
     {height}
-    viewBox="0 0 17 17"
+    viewBox="0 0 24 24"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <path
+    <!-- <path
       fill-rule="evenodd"
       clip-rule="evenodd"
       d="M12.8736 2.03627L8.1775 2.08605L8.1563 0.086164L16.2844 0L16.5153 7.84998L14.5162 7.90878L14.3823 3.356L8.24266 9.49563L6.82845 8.08141L12.8736 2.03627Z"
@@ -50,7 +51,10 @@
       fill-rule="evenodd"
       clip-rule="evenodd"
       d="M0 4.47501C0 2.81816 1.34315 1.47501 3 1.47501H7V3.47501H3C2.44772 3.47501 2 3.92273 2 4.47501V13.475C2 14.0273 2.44772 14.475 3 14.475H12C12.5523 14.475 13 14.0273 13 13.475V8.97501H15V13.475C15 15.1319 13.6569 16.475 12 16.475H3C1.34315 16.475 0 15.1319 0 13.475V4.47501Z"
-    />
+    /> -->
+    <!-- <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> -->
+      <path d="M11 5H7C5.89543 5 5 5.89543 5 7V17C5 18.1046 5.89543 19 7 19H17C18.1046 19 19 18.1046 19 17V12.25M19 5H15M19 5V9M19 5L9 15" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- </svg> -->
   </svg>
 {:else if icon == "alert"}
   <svg
@@ -320,6 +324,10 @@
 {:else if icon == "down-open-arrow"}
   <svg class:inline {width} {height} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M19 9l-7 7-7-7" />
+  </svg>
+{:else if icon == "search"}
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
   </svg>
 {:else if icon == "tip"}
   <svg 

@@ -12,14 +12,13 @@ export const addressValidate = async (value): Promise<true | { error: string }> 
 };
 
 export const required = async (value, type): Promise<true | { error: string }> => {
-  
   if (type == 'text' && value == "") {
     return { error: "Can't be blank" };
   }
   if (type == 'text' && !re.test(value)) {
     return { error: "Enter valid string" };
   }
-  if (type == 'number' && (value == undefined || value == null)) {
+  if (type == 'number' && (value == undefined || value == null || value == "")) {
     return { error: "Can't be blank" };
   }
   if (value == undefined || value == null) {

@@ -1,4 +1,4 @@
-# Rain Toolkit
+# Sloshy
 Sloshy is a stablecoin arbitrage product powered by Rain Protocol.
 
 ## Development setup

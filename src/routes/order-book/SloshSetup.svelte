@@ -190,7 +190,7 @@
           <div class="flex flex-col items-center p-6">
             <lottie-player src="https://lottie.host/5f90529b-22d1-4337-8c44-46e3ba7c0c68/pgMhlFIAcQ.json" background="transparent" speed="1" style="width: 300px; height: 200px;" loop autoplay></lottie-player>
             <span class="text-lg text-black font-medium pt-5">Transaction on chain</span>
-            <span class="text-base text-black font-medium underline"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={26}/> </a></span>
+            <span class="text-base text-black font-medium underline"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={16}/> </a></span>
           </div>
         {/if}
         {#if txStatus == TxStatus.Complete}
@@ -199,7 +199,7 @@
                 <img src={img['true_circle']} alt="Success" />
                 <span class="text-base font-normal text-black pt-3">The slosh has been created.</span>
                 <span class="text-base cursor-pointer font-normal text-black">You can now <a href="/#/slosh/{sloshId}" class="underline">deposit tokens.</a> </span>
-                <span class="text-base cursor-pointer font-medium text-black underline pt-5"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={26}/></a></span>
+                <span class="text-base cursor-pointer font-medium text-black underline pt-5"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={16}/></a></span>
             </div>
         {/if}
         {#if txStatus == TxStatus.Error}
@@ -208,7 +208,7 @@
                 <img src={img['false_circle']} alt="Error" />
                 <span class="text-base font-normal text-black pt-3">The slosh hasn't been created.</span>
                 <span class="text-base cursor-pointer font-normal text-black"><a on:click={handleTry} class="underline">Try again here</a> </span>
-                <span class="text-base cursor-pointer font-medium text-black underline pt-5"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={26}/></a></span>
+                <span class="text-base cursor-pointer font-medium text-black underline pt-5"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={16}/></a></span>
             </div>
         {/if}
     </Section>

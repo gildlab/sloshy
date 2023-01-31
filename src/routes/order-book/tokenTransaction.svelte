@@ -17,6 +17,7 @@
     
     let calcAllowance, txReceipt, isWithdrawable
     let depositUnits, withdrawUnits, tokenContract, transCancel = false
+    let awaitingWithdrawCrfn = true, awaitingDepositCrfn = false
 
     enum TxStatus {
         None,
@@ -55,7 +56,7 @@
         let tx;
         try {
         tx = await tokenContract.approve(orderBookContract.address, ethers.constants.MaxUint256);  
-
+        txHash = tx
         txStatus = TxStatus.AwaitingConfirmation
         txReceipt = await tx.wait();
         } catch (error) { 
@@ -101,8 +102,8 @@
         
         try {
             tx = await orderBookContract.deposit(depositConfigStruct);
-
-              txStatus = TxStatus.AwaitingConfirmation;
+            txHash = tx
+            awaitingDepositCrfn = true
             txReceipt = await tx.wait();
         } catch (error) { 
             Sentry.captureException(error);
@@ -131,6 +132,7 @@
                 return;
             }
         }
+        awaitingDepositCrfn = false
     };
 
     const withdraw = async () => {
@@ -149,37 +151,38 @@
         }; 
 
         try {
-        tx = await orderBookContract.withdraw(withdrawConfigStruct);
-
-          txStatus = TxStatus.AwaitingConfirmation;
-        txReceipt = await tx.wait();
+            tx = await orderBookContract.withdraw(withdrawConfigStruct);
+            txHash = tx
+            awaitingWithdrawCrfn = true
+            txReceipt = await tx.wait();
         } catch (error) { 
-        Sentry.captureException(error);
-        if (error.code === Logger.errors.TRANSACTION_REPLACED) {
-            if (error.cancelled) {
-            // errorMsg = "Transaction Cancelled";
-            //   txStatus = TxStatus.Error;
-            return;
-            } else {
-            txReceipt = await error.replacement.wait();
+            Sentry.captureException(error);
+            if (error.code === Logger.errors.TRANSACTION_REPLACED) {
+                if (error.cancelled) {
+                // errorMsg = "Transaction Cancelled";
+                //   txStatus = TxStatus.Error;
+                return;
+                } else {
+                txReceipt = await error.replacement.wait();
+                }
+            } else if(error.code === -32603){
+                // errorMsg = 'Transaction Underpriced , please try again'
+                // txStatus = TxStatus.Error;
+                return;
+            }else if(error.code == Logger.errors.ACTION_REJECTED){
+                        // errorMsg = 'Transaction Rejected'
+                        // txStatus = TxStatus.Error;
+                        return;
+            }else { 
+                // errorMsg = error.error?.data?.message  ||
+                // error.error?.message ||
+                // error.data?.message ||
+                // error?.message || 
+                // error?.code 
+                return;
             }
-        } else if(error.code === -32603){
-            // errorMsg = 'Transaction Underpriced , please try again'
-            // txStatus = TxStatus.Error;
-            return;
-        }else if(error.code == Logger.errors.ACTION_REJECTED){
-                    // errorMsg = 'Transaction Rejected'
-                    // txStatus = TxStatus.Error;
-                    return;
-        }else { 
-            // errorMsg = error.error?.data?.message  ||
-            // error.error?.message ||
-            // error.data?.message ||
-            // error?.message || 
-            // error?.code 
-            return;
         }
-        }
+        awaitingWithdrawCrfn = false
 
         return txReceipt;
     };
@@ -218,57 +221,73 @@
                     {/if}
                 {:else}
                     <div class="grid grid-cols-2 gap-x-28">
-                        <div>
-                            <div class="w-full text-base flex justify-center items-center text-white font-medium pb-5">Deposit {token?.tokenVault?.token?.symbol}</div>
-                            <Input
-                                type="text"
-                                wid="px-10"
-                                alignAll='items-center'
-                                lblTxtClr="text-white"
-                                bind:value={depositUnits}
-                                debounce
-                                validator={required}
-                            >
-                                <span slot="label">Enter the number of units to deposit:</span>
-                            </Input>
-                            <div class="flex justify-center underline text-white py-2 font-light" style="font-size: 16px;" on:click={()=>{depositUnits = result.balanceOf}}>{`MAX ${result.balanceOf}(${token?.tokenVault?.token?.symbol})`}</div>
-                            <div class="py-4 flex justify-center text-sm font-medium">
-                                Confirm your Deposit
+                        {#if awaitingDepositCrfn}
+                            <div class="flex flex-col justify-center items-center p-4 px-8" style="max-width: 17rem; border-radius: 20px;">
+                                <lottie-player src="https://lottie.host/5f90529b-22d1-4337-8c44-46e3ba7c0c68/pgMhlFIAcQ.json" background="transparent" speed="1" style="width: 300px; height: 150px;" loop autoplay></lottie-player>
+                                <span class="text-lg text-white font-medium pt-5">Transaction on chain</span>
+                                <span class="text-base text-white font-medium underline"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={16} color="text-white"/> </a></span>
                             </div>
-                            <span class='flex justify-center pt-1'>
-                                <button 
-                                    class="rounded-full text-base py-2 px-14 text-black font-medium" 
-                                    on:click={Deposit}>Deposit
-                                </button>
-                            </span>
-                        </div>
-                        <div>
-                            <div class="w-full text-base flex justify-center items-center text-white font-medium pb-5">Withdraw {token?.tokenVault?.token?.symbol}</div>
-                            <Input
-                                type="text"
-                                wid="px-10"
-                                alignAll='items-center'
-                                lblTxtClr="text-white"
-                                disabled={!isWithdrawable}
-                                bind:value={withdrawUnits}
-                                debounce
-                                validator={required}
-                            >
-                                <span slot="label">Enter the number of units to withdraw:</span>
-                            </Input>
-                            <div class="flex justify-center underline text-white py-2 font-light" style="font-size: 16px;" on:click={()=>{withdrawUnits = result.balanceOf}}>{`MAX ${result.balanceOf}(${token?.tokenVault?.token?.symbol})`}</div>
-                            <div class="py-4 flex justify-center text-sm font-medium">
-                                Confirm your withdraw
+                        {:else}
+                            <div>
+                                <div class="w-full text-base flex justify-center items-center text-white font-medium pb-5">Deposit {token?.tokenVault?.token?.symbol}</div>
+                                <Input
+                                    type="text"
+                                    wid="px-10"
+                                    alignAll='items-center'
+                                    lblTxtClr="text-white"
+                                    bind:value={depositUnits}
+                                    debounce
+                                    validator={required}
+                                >
+                                    <span slot="label">Enter the number of units to deposit:</span>
+                                </Input>
+                                <div class="flex justify-center underline text-white py-2 font-light cursor-pointer" style="font-size: 16px;" on:click={()=>{depositUnits = result.balanceOf}}>{`MAX ${result.balanceOf}(${token?.tokenVault?.token?.symbol})`}</div>
+                                <div class="py-4 flex justify-center text-sm font-medium">
+                                    Confirm your Deposit
+                                </div>
+                                <span class='flex justify-center pt-1'>
+                                    <button 
+                                        class="rounded-full text-base py-2 px-14 text-black font-medium" 
+                                        on:click={Deposit}>Deposit
+                                    </button>
+                                </span>
                             </div>
-                            <span class='flex justify-center'>
-                                <button 
-                                    class="rounded-full text-base py-2 px-14 text-black font-medium"
-                                    on:click={withdraw}
-                                    disabled={!isWithdrawable}>
-                                    Withdrawal
-                                </button>
-                            </span>
-                        </div>
+                        {/if}
+                        {#if awaitingWithdrawCrfn}
+                            <div class="flex flex-col justify-center items-center p-4 px-8" style="max-width: 17rem; border-radius: 20px;">
+                                <lottie-player src="https://lottie.host/5f90529b-22d1-4337-8c44-46e3ba7c0c68/pgMhlFIAcQ.json" background="transparent" speed="1" style="width: 300px; height: 150px;" loop autoplay></lottie-player>
+                                <span class="text-lg text-white font-medium pt-5">Transaction on chain</span>
+                                <span class="text-base text-white font-medium underline"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={16} color="white"/> </a></span>
+                            </div>
+                        {:else}
+                            <div>
+                                <div class="w-full text-base flex justify-center items-center text-white font-medium pb-5">Withdraw {token?.tokenVault?.token?.symbol}</div>
+                                <Input
+                                    type="text"
+                                    wid="px-10"
+                                    alignAll='items-center'
+                                    lblTxtClr="text-white"
+                                    disabled={!isWithdrawable}
+                                    bind:value={withdrawUnits}
+                                    debounce
+                                    validator={required}
+                                >
+                                    <span slot="label">Enter the number of units to withdraw:</span>
+                                </Input>
+                                <div class="flex justify-center underline text-white py-2 font-light cursor-pointer" style="font-size: 16px;" on:click={()=>{withdrawUnits = result.balanceOf}}>{`MAX ${result.balanceOf}(${token?.tokenVault?.token?.symbol})`}</div>
+                                <div class="py-4 flex justify-center text-sm font-medium">
+                                    Confirm your withdraw
+                                </div>
+                                <span class='flex justify-center'>
+                                    <button 
+                                        class="rounded-full text-base py-2 px-14 text-black font-medium"
+                                        on:click={withdraw}
+                                        disabled={!isWithdrawable}>
+                                        Withdrawal
+                                    </button>
+                                </span>
+                            </div>
+                        {/if}
                     </div>
                 {/if}
             {/await}
@@ -280,7 +299,7 @@
         <div class="flex flex-col justify-center items-center bg-white p-4 px-8" style="max-width: 17rem; border-radius: 20px;">
             <lottie-player src="https://lottie.host/5f90529b-22d1-4337-8c44-46e3ba7c0c68/pgMhlFIAcQ.json" background="transparent" speed="1" style="width: 300px; height: 200px;" loop autoplay></lottie-player>
             <span class="text-lg text-black font-medium pt-5">Transaction on chain</span>
-            <span class="text-base text-black font-medium underline"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={26}/> </a></span>
+            <span class="text-base text-black font-medium underline"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={16}/> </a></span>
         </div>
     </div>
 {/if}

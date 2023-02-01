@@ -304,7 +304,6 @@
             }
         }
     }
-    $: toggleT = toggle
     
     const onload = () =>{
         handleRowClick(0, firstToken)
@@ -369,7 +368,7 @@
                             </div>
                             <div />
                             {#key toggle}
-                                <TokenTransaction toggleToken={toggleT} token={tokenD} orderBookContract={orderBookContract} error= {errorMsg} />
+                                <TokenTransaction token={tokenD} orderBookContract={orderBookContract} error= {errorMsg} />
                             {/key }
 
                         <div class="py-6">

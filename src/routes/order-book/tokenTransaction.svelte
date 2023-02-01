@@ -13,15 +13,16 @@
     import { Logger, parseUnits, formatUnits } from "ethers/lib/utils";
     import IconLibrary from "$components/IconLibrary.svelte";
 
-    export let token, orderBookContract, toggleToken, error
+    export let token, orderBookContract, error
     
     let calcAllowance, txReceipt, isWithdrawable
     let depositUnits, withdrawUnits, tokenContract, transCancel = false
-    let awaitingWithdrawCrfn = true, awaitingDepositCrfn = false
+    let awaitingWithdrawCrfn = false, awaitingDepositCrfn = false
 
     enum TxStatus {
         None,
         AwaitingConfirmation,
+        AwaitingToken,
         Complete,
         Error,
     }
@@ -29,18 +30,20 @@
     let txStatus = TxStatus.None, errorMsg, txHash;
     
     onMount(async () => { 
+        txStatus = TxStatus.AwaitingToken
         let tokenC = new ethers.Contract(token?.tokenVault?.token.id, erc20ABI, $signer)
         tokenContract = tokenC
         calcAllowance = await checkAllowance(tokenC) 
+        txStatus = TxStatus.None
     })
 
     const checkAllowance =async (tokenC) => {
+
         let priceAllow = await tokenC.allowance($signerAddress.toLowerCase(), orderBookContract.address);
         let balance = await tokenC.balanceOf($signerAddress.toLowerCase())
         let decimals = await tokenC.decimals()
         let balanceOf = (+formatUnits(balance, decimals)).toFixed(3)
         
-
         return {
             priceAllow,
             balanceOf
@@ -300,6 +303,14 @@
             <lottie-player src="https://lottie.host/5f90529b-22d1-4337-8c44-46e3ba7c0c68/pgMhlFIAcQ.json" background="transparent" speed="1" style="width: 300px; height: 200px;" loop autoplay></lottie-player>
             <span class="text-lg text-black font-medium pt-5">Transaction on chain</span>
             <span class="text-base text-black font-medium underline"><a href={`${$selectedNetwork.blockExplorer}/tx/${txHash?.hash}`} target="_blank">Verify Transaction <IconLibrary icon="link" width={16}/> </a></span>
+        </div>
+    </div>
+{/if}
+{#if txStatus == TxStatus.AwaitingToken}
+    <div class="flex flex-col items-center p-6" style="background-color: #949494;">
+        <div class="flex flex-col justify-center items-center bg-white p-4 px-8" style="max-width: 17rem; border-radius: 20px;">
+            <lottie-player src="https://lottie.host/5f90529b-22d1-4337-8c44-46e3ba7c0c68/pgMhlFIAcQ.json" background="transparent" speed="1" style="width: 300px; height: 200px;" loop autoplay></lottie-player>
+            <span class="text-lg text-black font-medium pt-5">Loading Token Methods</span>
         </div>
     </div>
 {/if}
